@@ -1,5 +1,5 @@
-// 停車場預約系統（滾輪式進入時段選擇，每時段限 20 輛）
-const TOTAL_SPOTS = 50;
+// 停車場預約系統（JSON 檔案儲存，總車位 110，無取消功能）
+const TOTAL_SPOTS = 110;
 const SLOT_LIMIT = 20;
 
 const TIME_SLOTS = [
@@ -19,7 +19,7 @@ const TIME_SLOTS = [
     { label: "21:00-22:00", start: "21:00" }
 ];
 
-let reservations = JSON.parse(localStorage.getItem('parkingReservations')) || [];
+let reservations = [];
 let selectedSlotIndex = null;
 
 // DOM
@@ -35,6 +35,16 @@ const slotAvailabilityDiv = document.getElementById('slotAvailability');
 const slotPicker = document.getElementById('slotPicker');
 const selectedSlotDisplay = document.getElementById('selectedSlotDisplay');
 const selectedSlotInput = document.getElementById('selectedSlotIndex');
+
+async function loadReservations() {
+    try {
+        const res = await fetch('/api/reservations');
+        reservations = await res.json();
+    } catch (e) {
+        console.error('載入資料失敗', e);
+        reservations = [];
+    }
+}
 
 function getSlotCount(date, slotIndex) {
     return reservations.filter(r => r.date === date && r.slotIndex === slotIndex).length;
@@ -97,7 +107,6 @@ function selectSlot(index) {
     selectedSlotInput.value = index;
     selectedSlotDisplay.textContent = `已選擇：${TIME_SLOTS[index].label}`;
 
-    // 更新所有項目的選中樣式
     document.querySelectorAll('.slot-item').forEach(el => {
         const idx = parseInt(el.dataset.index);
         const isFull = el.classList.contains('cursor-not-allowed');
@@ -111,21 +120,27 @@ function selectSlot(index) {
     });
 }
 
-function initSlots() {
+async function initSlots() {
     const date = reserveDateInput.value || new Date().toISOString().split('T')[0];
     renderSlotAvailability(date);
     renderSlotPicker(date);
 }
 
-function init() {
+async function init() {
     totalEl.textContent = TOTAL_SPOTS;
     const today = new Date().toISOString().split('T')[0];
     reserveDateInput.value = today;
     reserveDateInput.min = today;
+
+    await loadReservations();
     initSlots();
     updateStats();
     renderReservations();
-    setInterval(updateStats, 5000);
+    setInterval(async () => {
+        await loadReservations();
+        updateStats();
+        initSlots();
+    }, 5000);
 
     reserveDateInput.addEventListener('change', initSlots);
 }
@@ -190,20 +205,12 @@ function renderReservations() {
             <td class="px-4 py-3">
                 <span class="px-2 py-1 text-xs font-semibold rounded-full ${statusClass}">${status}</span>
             </td>
-            <td class="px-4 py-3">
-                <button onclick="cancelReservation('${res.id}')" 
-                        class="text-red-600 hover:text-red-800 text-sm font-medium">取消</button>
-            </td>
         `;
         tbody.appendChild(tr);
     });
 }
 
-function generateId() {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
-}
-
-form.addEventListener('submit', (e) => {
+form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const plate = document.getElementById('plate').value.trim().toUpperCase();
@@ -230,7 +237,6 @@ form.addEventListener('submit', (e) => {
     const exitDate = new Date(`${date}T22:30:00`);
 
     const newRes = {
-        id: generateId(),
         plate,
         date,
         slotIndex: selectedSlotIndex,
@@ -239,29 +245,25 @@ form.addEventListener('submit', (e) => {
         exit: exitDate.toISOString()
     };
 
-    reservations.push(newRes);
-    saveReservations();
-    document.getElementById('plate').value = '';
-    initSlots();
-    showMessage('預約成功！', 'success');
-    updateStats();
-    renderReservations();
-});
-
-function cancelReservation(id) {
-    if (confirm('確定要取消此預約嗎？')) {
-        reservations = reservations.filter(r => r.id !== id);
-        saveReservations();
-        initSlots();
-        updateStats();
-        renderReservations();
-        showMessage('預約已取消', 'success');
+    try {
+        const res = await fetch('/api/reservations', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newRes)
+        });
+        const result = await res.json();
+        if (result.success) {
+            await loadReservations();
+            document.getElementById('plate').value = '';
+            initSlots();
+            updateStats();
+            renderReservations();
+            showMessage('預約成功！剩餘名額已更新', 'success');
+        }
+    } catch (e) {
+        showMessage('預約失敗，請稍後再試', 'error');
     }
-}
-
-function saveReservations() {
-    localStorage.setItem('parkingReservations', JSON.stringify(reservations));
-}
+});
 
 function showMessage(text, type) {
     messageEl.textContent = text;
@@ -269,5 +271,4 @@ function showMessage(text, type) {
     setTimeout(() => { messageEl.textContent = ''; }, 4000);
 }
 
-window.cancelReservation = cancelReservation;
 init();

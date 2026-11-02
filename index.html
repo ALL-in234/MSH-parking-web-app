@@ -1,5 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-HK">
+<head><!DOCTYPE html>
+<html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,7 +12,8 @@
     <div class="container mx-auto p-4 md:p-8 max-w-6xl">
         <header class="text-center mb-8">
             <h1 class="text-4xl font-bold text-blue-800 mb-2">🚗 停車場進出預約系統</h1>
-            <p class="text-gray-600">實時剩餘車位顯示 · 進出預約管理</p>
+            <p class="text-gray-600">實時剩餘車位 · 進入時段預約</p>
+            <p class="text-sm text-gray-500 mt-1">開放時間：08:00 - 22:30｜每時段最多 20 輛車</p>
         </header>
 
         <!-- 實時統計 -->
@@ -29,24 +32,31 @@
             </div>
         </div>
 
+        <!-- 時段剩餘名額 -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">今日各時段剩餘名額</h2>
+            <div id="slotAvailability" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3"></div>
+        </div>
+
         <!-- 預約表單 -->
         <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
-            <h2 class="text-2xl font-semibold text-gray-800 mb-4">新增進出預約</h2>
-            <form id="reservationForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">新增進入時段預約</h2>
+            <form id="reservationForm" class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">車牌號碼</label>
                     <input type="text" id="plate" placeholder="例如：AB1234" required 
                            class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">進入時間</label>
-                    <input type="datetime-local" id="entryTime" required 
+                    <label class="block text-sm font-medium text-gray-700 mb-1">預約日期</label>
+                    <input type="date" id="reserveDate" required 
                            class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">離開時間</label>
-                    <input type="datetime-local" id="exitTime" required 
-                           class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">進入時段</label>
+                    <select id="entrySlot" required 
+                            class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </select>
                 </div>
                 <div class="flex items-end">
                     <button type="submit" 
@@ -66,8 +76,8 @@
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">車牌</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">進入時間</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">離開時間</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">日期</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">進入時段</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">狀態</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
                         </tr>
@@ -79,7 +89,7 @@
         </div>
 
         <footer class="text-center text-gray-500 text-sm mt-8">
-            <p>數據儲存於瀏覽器本地 · 刷新頁面後仍保留 · 實時每 5 秒更新一次</p>
+            <p>數據儲存於瀏覽器本地 · 每時段限 20 輛 · 實時每 5 秒更新一次</p>
         </footer>
     </div>
 

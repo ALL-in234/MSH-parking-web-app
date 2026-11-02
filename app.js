@@ -67,10 +67,10 @@ function renderSlotPicker(date) {
         const isFull = remaining <= 0;
 
         const item = document.createElement('div');
-        item.className = `slot-item px-4 py-3 rounded-lg cursor-pointer transition-all duration-200 ${
+        item.className = `slot-item px-4 py-3 rounded-lg transition-all duration-200 ${
             isFull 
                 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
-                : 'bg-white hover:bg-blue-50 hover:shadow border border-gray-200'
+                : 'bg-white hover:bg-blue-50 hover:shadow border border-gray-200 cursor-pointer'
         }`;
         item.dataset.index = index;
         item.innerHTML = `
@@ -83,29 +83,32 @@ function renderSlotPicker(date) {
         `;
 
         if (!isFull) {
-            item.addEventListener('click', () => selectSlot(index, item));
+            item.addEventListener('click', function () {
+                selectSlot(index);
+            });
         }
 
         slotPicker.appendChild(item);
     });
 }
 
-function selectSlot(index, element) {
-    // 移除其他選中狀態
-    document.querySelectorAll('.slot-item').forEach(el => {
-        el.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
-        if (!el.classList.contains('bg-gray-200')) {
-            el.classList.add('bg-white', 'border-gray-200');
-        }
-    });
-
-    // 選中當前
-    element.classList.remove('bg-white', 'border-gray-200', 'hover:bg-blue-50');
-    element.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
-
+function selectSlot(index) {
     selectedSlotIndex = index;
     selectedSlotInput.value = index;
     selectedSlotDisplay.textContent = `已選擇：${TIME_SLOTS[index].label}`;
+
+    // 更新所有項目的選中樣式
+    document.querySelectorAll('.slot-item').forEach(el => {
+        const idx = parseInt(el.dataset.index);
+        const isFull = el.classList.contains('cursor-not-allowed');
+        if (isFull) return;
+
+        if (idx === index) {
+            el.className = 'slot-item px-4 py-3 rounded-lg bg-blue-600 text-white border border-blue-600 cursor-pointer transition-all duration-200';
+        } else {
+            el.className = 'slot-item px-4 py-3 rounded-lg bg-white hover:bg-blue-50 hover:shadow border border-gray-200 cursor-pointer transition-all duration-200';
+        }
+    });
 }
 
 function initSlots() {
@@ -238,7 +241,7 @@ form.addEventListener('submit', (e) => {
 
     reservations.push(newRes);
     saveReservations();
-    form.reset();
+    document.getElementById('plate').value = '';
     initSlots();
     showMessage('預約成功！', 'success');
     updateStats();

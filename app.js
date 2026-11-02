@@ -1,4 +1,4 @@
-// 停車場預約系統（JSON 檔案儲存，總車位 110，無取消功能）
+// 停車場預約系統（純前端 Demo 版）
 const TOTAL_SPOTS = 110;
 const SLOT_LIMIT = 20;
 
@@ -19,7 +19,7 @@ const TIME_SLOTS = [
     { label: "21:00-22:00", start: "21:00" }
 ];
 
-let reservations = [];
+let reservations = JSON.parse(localStorage.getItem('parkingReservations')) || [];
 let selectedSlotIndex = null;
 
 // DOM
@@ -36,14 +36,8 @@ const slotPicker = document.getElementById('slotPicker');
 const selectedSlotDisplay = document.getElementById('selectedSlotDisplay');
 const selectedSlotInput = document.getElementById('selectedSlotIndex');
 
-async function loadReservations() {
-    try {
-        const res = await fetch('/api/reservations');
-        reservations = await res.json();
-    } catch (e) {
-        console.error('載入資料失敗', e);
-        reservations = [];
-    }
+function saveReservations() {
+    localStorage.setItem('parkingReservations', JSON.stringify(reservations));
 }
 
 function getSlotCount(date, slotIndex) {
@@ -120,26 +114,23 @@ function selectSlot(index) {
     });
 }
 
-async function initSlots() {
+function initSlots() {
     const date = reserveDateInput.value || new Date().toISOString().split('T')[0];
     renderSlotAvailability(date);
     renderSlotPicker(date);
 }
 
-async function init() {
+function init() {
     totalEl.textContent = TOTAL_SPOTS;
     const today = new Date().toISOString().split('T')[0];
     reserveDateInput.value = today;
     reserveDateInput.min = today;
 
-    await loadReservations();
     initSlots();
     updateStats();
     renderReservations();
-    setInterval(async () => {
-        await loadReservations();
+    setInterval(() => {
         updateStats();
-        initSlots();
     }, 5000);
 
     reserveDateInput.addEventListener('change', initSlots);
@@ -210,7 +201,11 @@ function renderReservations() {
     });
 }
 
-form.addEventListener('submit', async (e) => {
+function generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+}
+
+form.addEventListener('submit', (e) => {
     e.preventDefault();
 
     const plate = document.getElementById('plate').value.trim().toUpperCase();
@@ -237,6 +232,7 @@ form.addEventListener('submit', async (e) => {
     const exitDate = new Date(`${date}T22:30:00`);
 
     const newRes = {
+        id: generateId(),
         plate,
         date,
         slotIndex: selectedSlotIndex,
@@ -245,24 +241,13 @@ form.addEventListener('submit', async (e) => {
         exit: exitDate.toISOString()
     };
 
-    try {
-        const res = await fetch('/api/reservations', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(newRes)
-        });
-        const result = await res.json();
-        if (result.success) {
-            await loadReservations();
-            document.getElementById('plate').value = '';
-            initSlots();
-            updateStats();
-            renderReservations();
-            showMessage('預約成功！剩餘名額已更新', 'success');
-        }
-    } catch (e) {
-        showMessage('預約失敗，請稍後再試', 'error');
-    }
+    reservations.push(newRes);
+    saveReservations();
+    document.getElementById('plate').value = '';
+    initSlots();
+    updateStats();
+    renderReservations();
+    showMessage('預約成功！剩餘名額已更新', 'success');
 });
 
 function showMessage(text, type) {

@@ -1,4 +1,4 @@
-// 停車場預約系統（純前端 Demo 版）
+// 停車場預約系統（純前端 Demo 版 - 已修復）
 const TOTAL_SPOTS = 110;
 const SLOT_LIMIT = 20;
 
@@ -59,11 +59,15 @@ function renderSlotAvailability(date) {
     });
 }
 
-function renderSlotPicker(date) {
-    slotPicker.innerHTML = '';
+function resetSelection() {
     selectedSlotIndex = null;
     selectedSlotInput.value = '';
     selectedSlotDisplay.textContent = '請選擇一個時段';
+}
+
+function renderSlotPicker(date) {
+    slotPicker.innerHTML = '';
+    resetSelection();
 
     TIME_SLOTS.forEach((slot, index) => {
         const count = getSlotCount(date, index);
@@ -129,14 +133,14 @@ function init() {
     initSlots();
     updateStats();
     renderReservations();
-    setInterval(() => {
-        updateStats();
-    }, 5000);
+    setInterval(updateStats, 5000);
 
-    reserveDateInput.addEventListener('change', initSlots);
+    reserveDateInput.addEventListener('change', () => {
+        resetSelection();
+        initSlots();
+    });
 }
 
-// 假設每筆預約佔用至當日 22:30
 function getOccupiedCount(now = Date.now()) {
     return reservations.filter(r => {
         const entry = new Date(r.entry).getTime();
@@ -243,7 +247,10 @@ form.addEventListener('submit', (e) => {
 
     reservations.push(newRes);
     saveReservations();
+    
+    // 完整重置
     document.getElementById('plate').value = '';
+    resetSelection();
     initSlots();
     updateStats();
     renderReservations();

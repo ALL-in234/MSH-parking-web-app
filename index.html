@@ -1,326 +1,89 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-HK">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>每日任務 ✦</title>
-  <!-- Dexie.js CDN -->
-  <script src="https://unpkg.com/dexie@4/dist/dexie.js"></script>
-  <style>
-    :root {
-      --primary: #6366f1;
-      --primary-dark: #4f46e5;
-      --bg: #f8fafc;
-      --card: #ffffff;
-      --text: #1e293b;
-      --text-light: #64748b;
-      --danger: #ef4444;
-      --work: #3b82f6;
-      --study: #8b5cf6;
-      --sport: #f59e0b;
-      --life: #10b981;
-      --other: #6b7280;
-    }
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body {
-      font-family: system-ui, -apple-system, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      padding: 16px;
-    }
-    .container { max-width: 540px; margin: 0 auto; }
-    h1 { text-align: center; margin: 20px 0 8px; font-size: 2.2rem; color: var(--primary); }
-    .streak-box {
-      text-align: center;
-      margin: 0 0 28px;
-      font-size: 1.3rem;
-      font-weight: 600;
-      color: #f97316;
-    }
-    .date { text-align: center; color: var(--text-light); margin-bottom: 24px; }
-    
-    .input-area {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 24px;
-    }
-    input[type="text"] {
-      flex: 1 1 220px;
-      padding: 12px 16px;
-      border: 2px solid #e2e8f0;
-      border-radius: 8px;
-      font-size: 1.05rem;
-    }
-    select {
-      padding: 12px;
-      border: 2px solid #e2e8f0;
-      border-radius: 8px;
-      font-size: 1.05rem;
-      background: white;
-    }
-    button {
-      padding: 0 20px;
-      background: var(--primary);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 1.05rem;
-      cursor: pointer;
-      transition: 0.15s;
-    }
-    button:hover { background: var(--primary-dark); }
-
-    .task-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 40px; }
-    .task-item {
-      background: var(--card);
-      padding: 14px 16px;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      transition: all 0.2s;
-    }
-    .task-item.completed { opacity: 0.75; text-decoration: line-through; color: var(--text-light); }
-    .checkbox { width: 22px; height: 22px; accent-color: var(--primary); cursor: pointer; }
-    .task-text { flex: 1; font-size: 1.05rem; word-break: break-word; }
-    .category-tag {
-      padding: 4px 10px;
-      border-radius: 12px;
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: white;
-      white-space: nowrap;
-    }
-    .delete-btn {
-      background: #fee2e2;
-      color: var(--danger);
-      padding: 6px 10px;
-      font-size: 0.9rem;
-      border-radius: 6px;
-      border: none;
-      cursor: pointer;
-    }
-    .delete-btn:hover { background: #fecaca; }
-    .empty { text-align: center; color: var(--text-light); padding: 60px 20px; font-size: 1.1rem; }
-    .cat-work  { background: var(--work); }
-    .cat-study { background: var(--study); }
-    .cat-sport { background: var(--sport); }
-    .cat-life  { background: var(--life); }
-    .cat-other { background: var(--other); }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>停車場進出預約系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
+<body class="bg-gradient-to-br from-blue-50 to-gray-100 min-h-screen">
+    <div class="container mx-auto p-4 md:p-8 max-w-6xl">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-blue-800 mb-2">🚗 停車場進出預約系統</h1>
+            <p class="text-gray-600">實時剩餘車位顯示 · 進出預約管理</p>
+        </header>
 
-<div class="container">
-  <h1>每日任務 ✦</h1>
-  <div class="streak-box" id="streak">連續達成天數：0 天 🔥</div>
-  <div class="date" id="today"></div>
+        <!-- 實時統計 -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+                <h2 class="text-sm font-medium text-gray-500 uppercase">總車位</h2>
+                <p id="totalSpots" class="text-4xl font-bold text-blue-600 mt-2">50</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+                <h2 class="text-sm font-medium text-gray-500 uppercase">剩餘車位 (實時)</h2>
+                <p id="availableSpots" class="text-4xl font-bold text-green-600 mt-2">50</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-red-500">
+                <h2 class="text-sm font-medium text-gray-500 uppercase">當前佔用</h2>
+                <p id="occupiedSpots" class="text-4xl font-bold text-red-600 mt-2">0</p>
+            </div>
+        </div>
 
-  <div class="input-area">
-    <input type="text" id="taskInput" placeholder="今天想完成什麼？" autocomplete="off"/>
-    <select id="categorySelect">
-      <option value="work">工作</option>
-      <option value="study">學習</option>
-      <option value="sport">運動</option>
-      <option value="life">生活</option>
-      <option value="other" selected>其他</option>
-    </select>
-    <button onclick="addTask()">新增</button>
-  </div>
+        <!-- 預約表單 -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">新增進出預約</h2>
+            <form id="reservationForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">車牌號碼</label>
+                    <input type="text" id="plate" placeholder="例如：AB1234" required 
+                           class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">進入時間</label>
+                    <input type="datetime-local" id="entryTime" required 
+                           class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">離開時間</label>
+                    <input type="datetime-local" id="exitTime" required 
+                           class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <div class="flex items-end">
+                    <button type="submit" 
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200">
+                        確認預約
+                    </button>
+                </div>
+            </form>
+            <p id="message" class="mt-3 text-sm font-medium"></p>
+        </div>
 
-  <div class="task-list" id="taskList"></div>
-</div>
+        <!-- 預約列表 -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">預約列表</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">車牌</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">進入時間</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">離開時間</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">狀態</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reservationsBody" class="bg-white divide-y divide-gray-200"></tbody>
+                </table>
+            </div>
+            <p id="noReservations" class="text-center text-gray-500 py-8 hidden">暫無預約記錄</p>
+        </div>
 
-<script>
-// ==================== IndexedDB 設定 (使用 Dexie.js) ====================
-const db = new Dexie('DailyTasksDB');
+        <footer class="text-center text-gray-500 text-sm mt-8">
+            <p>數據儲存於瀏覽器本地 · 刷新頁面後仍保留 · 實時每 5 秒更新一次</p>
+        </footer>
+    </div>
 
-db.version(1).stores({
-  tasks: 'date, tasks',          // date 作為主鍵，每天一筆
-  streaks: 'date, value'         // 每天的 streak 值
-});
-
-// 類別名稱對應
-const categoryNames = {
-  work:  "工作",
-  study: "學習",
-  sport: "運動",
-  life:  "生活",
-  other: "其他"
-};
-
-// 全域變數
-let todayStr = '';
-let tasks = [];
-let streak = 0;
-
-// 取得今天 YYYY-MM-DD
-function getToday() {
-  return new Date().toISOString().split('T')[0];
-}
-
-// 取得昨天 YYYY-MM-DD
-function getYesterday() {
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
-  return d.toISOString().split('T')[0];
-}
-
-// 載入資料
-async function loadData() {
-  todayStr = getToday();
-  document.getElementById('today').textContent = new Date().toLocaleDateString('zh-TW', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-  });
-
-  // 載入今天任務
-  const todayRecord = await db.tasks.get(todayStr);
-  tasks = todayRecord ? todayRecord.tasks : [];
-
-  // 載入 streak（優先今天，若無則看昨天）
-  let streakRecord = await db.streaks.get(todayStr);
-  if (!streakRecord) {
-    streakRecord = await db.streaks.get(getYesterday());
-    streak = streakRecord ? streakRecord.value : 0;
-  } else {
-    streak = streakRecord.value;
-  }
-
-  updateStreakDisplay();
-  renderTasks();
-}
-
-// 儲存今天任務
-async function saveTasks() {
-  await db.tasks.put({ date: todayStr, tasks });
-  await checkStreak();
-}
-
-// 儲存 streak
-async function saveStreak() {
-  await db.streaks.put({ date: todayStr, value: streak });
-}
-
-// 更新 streak 顯示
-function updateStreakDisplay() {
-  const el = document.getElementById('streak');
-  const text = streak > 0 ? `連續達成 ${streak} 天 🔥` : '今天開始你的連續達成吧！';
-  el.textContent = text;
-  el.style.color = streak >= 7 ? '#dc2626' : (streak >= 3 ? '#f59e0b' : '#64748b');
-}
-
-// 檢查並更新 streak
-async function checkStreak() {
-  if (tasks.length === 0) {
-    streak = 0;
-    updateStreakDisplay();
-    await saveStreak();
-    return;
-  }
-
-  const allDone = tasks.every(t => t.done);
-  if (!allDone) {
-    streak = 0;
-    updateStreakDisplay();
-    await saveStreak();
-    return;
-  }
-
-  // 今天全部完成
-  const yesterdayStr = getYesterday();
-  const yesterdayStreak = await db.streaks.get(yesterdayStr);
-
-  if (yesterdayStreak && yesterdayStreak.value > 0) {
-    streak = yesterdayStreak.value + 1;
-  } else {
-    streak = 1;
-  }
-
-  updateStreakDisplay();
-  await saveStreak();
-}
-
-// 新增任務
-async function addTask() {
-  const input = document.getElementById('taskInput');
-  const catSelect = document.getElementById('categorySelect');
-  const text = input.value.trim();
-  if (!text) return;
-
-  tasks.push({
-    id: Date.now(),
-    text,
-    category: catSelect.value,
-    done: false
-  });
-
-  input.value = '';
-  await saveTasks();
-  renderTasks();
-}
-
-// 切換完成狀態
-async function toggleTask(id) {
-  const task = tasks.find(t => t.id === id);
-  if (task) {
-    task.done = !task.done;
-    await saveTasks();
-    renderTasks();
-  }
-}
-
-// 刪除任務
-async function deleteTask(id) {
-  if (!confirm('確定刪除這項任務？')) return;
-  tasks = tasks.filter(t => t.id !== id);
-  await saveTasks();
-  renderTasks();
-}
-
-// 渲染任務列表
-function renderTasks() {
-  const container = document.getElementById('taskList');
-  container.innerHTML = '';
-
-  if (tasks.length === 0) {
-    container.innerHTML = '<div class="empty">今天還沒有任務～<br>來新增一個吧！</div>';
-    return;
-  }
-
-  tasks.forEach(task => {
-    const div = document.createElement('div');
-    div.className = `task-item ${task.done ? 'completed' : ''}`;
-
-    const catClass = `cat-${task.category}`;
-    const catName = categoryNames[task.category] || '其他';
-
-    div.innerHTML = `
-      <input type="checkbox" class="checkbox" 
-             ${task.done ? 'checked' : ''} 
-             onchange="toggleTask(${task.id})"/>
-      <div class="category-tag ${catClass}">${catName}</div>
-      <span class="task-text">${task.text}</span>
-      <button class="delete-btn" onclick="deleteTask(${task.id})">刪除</button>
-    `;
-
-    container.appendChild(div);
-  });
-}
-
-// Enter 鍵新增
-document.getElementById('taskInput').addEventListener('keypress', e => {
-  if (e.key === 'Enter') addTask();
-});
-
-// 啟動
-loadData().catch(err => {
-  console.error('資料庫載入失敗:', err);
-  alert('無法載入資料庫，請檢查瀏覽器是否支援 IndexedDB');
-});
-</script>
+    <script src="app.js"></script>
 </body>
 </html>
 

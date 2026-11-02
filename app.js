@@ -1,6 +1,6 @@
-// 停車場預約系統（只選進入時段，每時段限 20 輛）
+// 停車場預約系統（滾輪式進入時段選擇，每時段限 20 輛）
 const TOTAL_SPOTS = 50;
-const SLOT_LIMIT = 20; // 每個進入時段最多 20 輛
+const SLOT_LIMIT = 20;
 
 const TIME_SLOTS = [
     { label: "08:00-09:00", start: "08:00" },
@@ -20,6 +20,7 @@ const TIME_SLOTS = [
 ];
 
 let reservations = JSON.parse(localStorage.getItem('parkingReservations')) || [];
+let selectedSlotIndex = null;
 
 // DOM
 const totalEl = document.getElementById('totalSpots');
@@ -29,26 +30,11 @@ const form = document.getElementById('reservationForm');
 const messageEl = document.getElementById('message');
 const tbody = document.getElementById('reservationsBody');
 const noResEl = document.getElementById('noReservations');
-const entrySlotSelect = document.getElementById('entrySlot');
 const reserveDateInput = document.getElementById('reserveDate');
 const slotAvailabilityDiv = document.getElementById('slotAvailability');
-
-function initSlots() {
-    entrySlotSelect.innerHTML = '';
-    const date = reserveDateInput.value || new Date().toISOString().split('T')[0];
-
-    TIME_SLOTS.forEach((slot, index) => {
-        const count = getSlotCount(date, index);
-        const remaining = SLOT_LIMIT - count;
-        const option = document.createElement('option');
-        option.value = index;
-        option.textContent = `${slot.label}（剩餘 ${remaining}）`;
-        if (remaining <= 0) option.disabled = true;
-        entrySlotSelect.appendChild(option);
-    });
-
-    renderSlotAvailability(date);
-}
+const slotPicker = document.getElementById('slotPicker');
+const selectedSlotDisplay = document.getElementById('selectedSlotDisplay');
+const selectedSlotInput = document.getElementById('selectedSlotIndex');
 
 function getSlotCount(date, slotIndex) {
     return reservations.filter(r => r.date === date && r.slotIndex === slotIndex).length;
@@ -67,6 +53,65 @@ function renderSlotAvailability(date) {
         `;
         slotAvailabilityDiv.appendChild(div);
     });
+}
+
+function renderSlotPicker(date) {
+    slotPicker.innerHTML = '';
+    selectedSlotIndex = null;
+    selectedSlotInput.value = '';
+    selectedSlotDisplay.textContent = '請選擇一個時段';
+
+    TIME_SLOTS.forEach((slot, index) => {
+        const count = getSlotCount(date, index);
+        const remaining = SLOT_LIMIT - count;
+        const isFull = remaining <= 0;
+
+        const item = document.createElement('div');
+        item.className = `slot-item px-4 py-3 rounded-lg cursor-pointer transition-all duration-200 ${
+            isFull 
+                ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                : 'bg-white hover:bg-blue-50 hover:shadow border border-gray-200'
+        }`;
+        item.dataset.index = index;
+        item.innerHTML = `
+            <div class="flex justify-between items-center">
+                <span class="font-medium">${slot.label}</span>
+                <span class="text-sm ${isFull ? 'text-red-500' : 'text-green-600'}">
+                    剩餘 ${remaining}
+                </span>
+            </div>
+        `;
+
+        if (!isFull) {
+            item.addEventListener('click', () => selectSlot(index, item));
+        }
+
+        slotPicker.appendChild(item);
+    });
+}
+
+function selectSlot(index, element) {
+    // 移除其他選中狀態
+    document.querySelectorAll('.slot-item').forEach(el => {
+        el.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
+        if (!el.classList.contains('bg-gray-200')) {
+            el.classList.add('bg-white', 'border-gray-200');
+        }
+    });
+
+    // 選中當前
+    element.classList.remove('bg-white', 'border-gray-200', 'hover:bg-blue-50');
+    element.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
+
+    selectedSlotIndex = index;
+    selectedSlotInput.value = index;
+    selectedSlotDisplay.textContent = `已選擇：${TIME_SLOTS[index].label}`;
+}
+
+function initSlots() {
+    const date = reserveDateInput.value || new Date().toISOString().split('T')[0];
+    renderSlotAvailability(date);
+    renderSlotPicker(date);
 }
 
 function init() {
@@ -160,28 +205,32 @@ form.addEventListener('submit', (e) => {
 
     const plate = document.getElementById('plate').value.trim().toUpperCase();
     const date = reserveDateInput.value;
-    const slotIndex = parseInt(entrySlotSelect.value);
 
     if (!plate || !date) {
         showMessage('請填寫車牌與日期', 'error');
         return;
     }
 
-    const count = getSlotCount(date, slotIndex);
+    if (selectedSlotIndex === null) {
+        showMessage('請選擇進入時段', 'error');
+        return;
+    }
+
+    const count = getSlotCount(date, selectedSlotIndex);
     if (count >= SLOT_LIMIT) {
         showMessage('該時段已額滿（20 輛）', 'error');
         return;
     }
 
-    const slot = TIME_SLOTS[slotIndex];
+    const slot = TIME_SLOTS[selectedSlotIndex];
     const entryDate = new Date(`${date}T${slot.start}:00`);
-    const exitDate = new Date(`${date}T22:30:00`); // 佔用至當日結束
+    const exitDate = new Date(`${date}T22:30:00`);
 
     const newRes = {
         id: generateId(),
         plate,
         date,
-        slotIndex,
+        slotIndex: selectedSlotIndex,
         slotLabel: slot.label,
         entry: entryDate.toISOString(),
         exit: exitDate.toISOString()
